@@ -1,4 +1,4 @@
-
+<!-- HTML file updated: Corrected "Table Name" to separate into two columns -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -112,14 +112,14 @@
   <table id="data-table">
     <thead>
       <tr>
-        <th>Table Name</th>
+        <th>Table</th>
+        <th>Name</th>
         <th>PP</th>
         <th>Time</th>
         <th>Number</th>
       </tr>
     </thead>
-    <tbody id="table-body">
-    </tbody>
+    <tbody id="table-body"></tbody>
   </table>
 
   <div class="navigation">
@@ -168,7 +168,7 @@
       tbody.innerHTML = "";
       for (let i = 0; i < 15; i++) {
         const row = document.createElement("tr");
-        for (let j = 0; j < 4; j++) {
+        for (let j = 0; j < 5; j++) {
           const cell = document.createElement("td");
           cell.contentEditable = true;
           cell.textContent = (data[i] && data[i][j]) || "";
@@ -197,12 +197,12 @@
       doc.text(`Boteco Manolo e Marcelo - ${weekdays[currentDate.getDay()]} ${currentDate.getDate()} ${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`, 10, 20);
       let y = 30;
       doc.setFontSize(12);
-      doc.text("Table Name     PP     Time     Number", 10, y);
+      doc.text("Table  Name  PP  Time  Number", 10, y);
       y += 10;
       const rows = document.querySelectorAll("#table-body tr");
       rows.forEach(row => {
         const cells = row.querySelectorAll("td");
-        const line = Array.from(cells).map(cell => cell.textContent.trim()).join("     ");
+        const line = Array.from(cells).map(cell => cell.textContent.trim()).join("  ");
         doc.text(line, 10, y);
         y += 8;
       });
