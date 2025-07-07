@@ -1,268 +1,42 @@
-<!-- HTML file updated: Added editable Show field, auto-load today's page, and calendar date selector -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Table - Boteco Manolo e Marcelo</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.8/inputmask.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Boteco Schedule</title>
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    onAuthStateChanged(auth, user => {
+      if (user) window.location.href = "dashboard.html";
+    });
+
+    window.login = async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        alert("Login failed: " + error.message);
+      }
+    }
+  </script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #fff;
-      color: #000;
-    }
-    .logo {
-      width: 200px;
-      margin-bottom: 20px;
-    }
-    .header {
-      text-align: left;
-      margin-bottom: 10px;
-    }
-    .header .day-number {
-      font-size: 36px;
-      font-weight: bold;
-      display: inline-block;
-      margin-right: 20px;
-    }
-    .header .weekday {
-      font-size: 28px;
-      font-weight: bold;
-      display: inline-block;
-    }
-    .header .month-year {
-      font-size: 18px;
-      margin-top: 5px;
-    }
-    .section-title {
-      font-size: 18px;
-      margin-top: 30px;
-      margin-bottom: 10px;
-    }
-    #show-field {
-      font-size: 16px;
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      border-bottom: 1px solid #000;
-      padding: 6px;
-      text-align: left;
-      font-size: 14px;
-    }
-    th {
-      font-weight: bold;
-    }
-    .navigation, .actions {
-      margin-top: 30px;
-    }
-    button, input[type="date"] {
-      padding: 8px 16px;
-      font-size: 14px;
-      margin-right: 10px;
-      cursor: pointer;
-    }
-    #date-picker {
-      margin-top: 20px;
-    }
-    @media (max-width: 600px) {
-      body {
-        margin: 10px;
-      }
-      .header .day-number {
-        font-size: 28px;
-      }
-      .header .weekday {
-        font-size: 24px;
-      }
-      .header .month-year {
-        font-size: 16px;
-      }
-      table {
-        font-size: 12px;
-      }
-    }
+    body { font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #fff; }
+    .container { text-align: center; max-width: 300px; width: 100%; }
+    .logo { width: 200px; margin-bottom: 30px; }
+    input { width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; width: 100%; }
   </style>
 </head>
 <body>
-  <img src="image.png" alt="Boteco do Manolo Logo" class="logo">
-  <div class="header">
-    <div class="day-number" id="day-number">22</div>
-    <div class="weekday" id="weekday">SUNDAY</div>
-    <div class="month-year" id="month-year">JUNE 2025</div>
+  <div class="container">
+    <img src="image.png" class="logo" alt="Logo Boteco" />
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
   </div>
-
-  <div class="section-title">Show:</div>
-  <input type="text" id="show-field" placeholder="Enter the show or artist name" />
-
-  <table id="data-table">
-    <thead>
-      <tr>
-        <th>Table</th>
-        <th>Name</th>
-        <th>PP</th>
-        <th>Time</th>
-        <th>Number</th>
-      </tr>
-    </thead>
-    <tbody id="table-body"></tbody>
-  </table>
-
-  <div class="navigation">
-    <button onclick="changeDate(-1)">Previous Day</button>
-    <button onclick="changeDate(1)">Next Day</button>
-    <button onclick="goToToday()">Today</button>
-  </div>
-
-  <div class="actions">
-    <button onclick="saveData()">Save</button>
-    <button onclick="exportToPDF()">Export to PDF</button>
-  </div>
-
-  <div id="date-picker">
-    <label for="goto-date">Go to date:</label>
-    <input type="date" id="goto-date" onchange="goToSelectedDate()" />
-  </div>
-
-  <script>
-    const startDate = new Date('2025-06-04');
-    const endDate = new Date('2026-12-31');
-    let currentDate = new Date();
-
-    function clampDate(date) {
-      return date < startDate ? startDate : (date > endDate ? endDate : date);
-    }
-
-    currentDate = clampDate(currentDate);
-
-    const weekdays = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-    const months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-
-    function formatDateKey(date) {
-      return date.toISOString().split('T')[0];
-    }
-
-    function updateDateDisplay() {
-      document.getElementById("day-number").textContent = currentDate.getDate();
-      document.getElementById("weekday").textContent = weekdays[currentDate.getDay()];
-      document.getElementById("month-year").textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-      document.getElementById("goto-date").value = formatDateKey(currentDate);
-      loadData();
-    }
-
-    function changeDate(offset) {
-      const newDate = new Date(currentDate);
-      newDate.setDate(newDate.getDate() + offset);
-      if (newDate >= startDate && newDate <= endDate) {
-        saveData();
-        currentDate = newDate;
-        updateDateDisplay();
-      }
-    }
-
-    function goToToday() {
-      const today = clampDate(new Date());
-      saveData();
-      currentDate = today;
-      updateDateDisplay();
-    }
-
-    function goToSelectedDate() {
-      const input = document.getElementById("goto-date").value;
-      if (input) {
-        const selected = new Date(input);
-        if (!isNaN(selected)) {
-          saveData();
-          currentDate = clampDate(selected);
-          updateDateDisplay();
-        }
-      }
-    }
-
-    function loadData() {
-      const key = formatDateKey(currentDate);
-      const storage = JSON.parse(localStorage.getItem(key) || "{}");
-      document.getElementById("show-field").value = storage.show || "";
-      const data = storage.rows || [];
-      const tbody = document.getElementById("table-body");
-      tbody.innerHTML = "";
-      for (let i = 0; i < 15; i++) {
-        const row = document.createElement("tr");
-        for (let j = 0; j < 5; j++) {
-          const cell = document.createElement("td");
-          cell.contentEditable = true;
-          cell.textContent = (data[i] && data[i][j]) || "";
-          row.appendChild(cell);
-          if (j === 4) {
-            cell.addEventListener('blur', () => {
-              let raw = cell.textContent.replace(/[^0-9]/g, '');
-              if (raw.length === 10) {
-                cell.textContent = `(${raw.slice(0, 3)}) ${raw.slice(3, 6)} - ${raw.slice(6)}`;
-              }
-            });
-          }
-          if (j === 3) {
-            cell.addEventListener('blur', () => {
-              let value = cell.textContent.trim();
-              const match = value.match(/^(\d{1,2}):(\d{2})$/);
-              if (match) {
-                let h = parseInt(match[1]);
-                let m = parseInt(match[2]);
-                if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
-                  cell.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-                }
-              }
-            });
-          }
-        }
-        tbody.appendChild(row);
-      }
-    }
-
-    function saveData() {
-      const key = formatDateKey(currentDate);
-      const rows = document.querySelectorAll("#table-body tr");
-      const data = [];
-      rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        const rowData = Array.from(cells).map(cell => cell.textContent);
-        data.push(rowData);
-      });
-      const show = document.getElementById("show-field").value;
-      localStorage.setItem(key, JSON.stringify({ show, rows: data }));
-    }
-
-    async function exportToPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.setFontSize(16);
-      doc.text(`Boteco Manolo e Marcelo - ${weekdays[currentDate.getDay()]} ${currentDate.getDate()} ${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`, 10, 20);
-      let y = 30;
-      doc.setFontSize(12);
-      const showText = document.getElementById("show-field").value;
-      doc.text("Show: " + showText, 10, y);
-      y += 10;
-      doc.text("Table  Name  PP  Time  Number", 10, y);
-      y += 10;
-      const rows = document.querySelectorAll("#table-body tr");
-      rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        const line = Array.from(cells).map(cell => cell.textContent.trim()).join("  ");
-        doc.text(line, 10, y);
-        y += 8;
-      });
-      doc.save(`Boteco_${formatDateKey(currentDate)}.pdf`);
-    }
-
-    updateDateDisplay();
-  </script>
 </body>
 </html>
