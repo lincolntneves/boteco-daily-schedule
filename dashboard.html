@@ -1,2 +1,178 @@
-<!-- Due to length, content is stored separately -->
-Carregando conteúdo...
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Boteco Schedule Dashboard</title>
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import {
+      onAuthStateChanged,
+      signOut
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import {
+      doc,
+      setDoc,
+      getDoc
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const startDate = new Date('2025-06-04');
+    const endDate = new Date('2026-12-31');
+    let currentDate = new Date();
+
+    function clampDate(date) {
+      return date < startDate ? startDate : (date > endDate ? endDate : date);
+    }
+
+    currentDate = clampDate(currentDate);
+
+    const weekdays = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+    const months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+
+    function formatDateKey(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    async function loadData() {
+      const key = formatDateKey(currentDate);
+      const ref = doc(db, 'schedule', key);
+      const snap = await getDoc(ref);
+      let data = { show: '', rows: [] };
+      if (snap.exists()) {
+        data = snap.data();
+      }
+
+      document.getElementById("show-field").value = data.show || "";
+      const tbody = document.getElementById("table-body");
+      tbody.innerHTML = "";
+      for (let i = 0; i < 15; i++) {
+        const row = document.createElement("tr");
+        for (let j = 0; j < 5; j++) {
+          const cell = document.createElement("td");
+          cell.contentEditable = true;
+          cell.textContent = (data.rows?.[i]?.[j]) || "";
+          row.appendChild(cell);
+
+          if (j === 4) {
+            cell.addEventListener('blur', () => {
+              let raw = cell.textContent.replace(/[^0-9]/g, '');
+              if (raw.length === 10) {
+                cell.textContent = `(${raw.slice(0, 3)}) ${raw.slice(3, 6)} - ${raw.slice(6)}`;
+              }
+            });
+          }
+
+          if (j === 3) {
+            cell.addEventListener('blur', () => {
+              let value = cell.textContent.trim();
+              const match = value.match(/^(\d{1,2}):(\d{2})$/);
+              if (match) {
+                let h = parseInt(match[1]);
+                let m = parseInt(match[2]);
+                if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+                  cell.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                }
+              }
+            });
+          }
+        }
+        tbody.appendChild(row);
+      }
+
+      updateHeader();
+    }
+
+    async function saveData() {
+      const key = formatDateKey(currentDate);
+      const show = document.getElementById("show-field").value;
+      const rows = [];
+      document.querySelectorAll("#table-body tr").forEach(row => {
+        const cells = row.querySelectorAll("td");
+        rows.push(Array.from(cells).map(c => c.textContent.trim()));
+      });
+      await setDoc(doc(db, 'schedule', key), { show, rows });
+      alert("Saved!");
+    }
+
+    function updateHeader() {
+      document.getElementById("day-number").textContent = currentDate.getDate();
+      document.getElementById("weekday").textContent = weekdays[currentDate.getDay()];
+      document.getElementById("month-year").textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      document.getElementById("goto-date").value = formatDateKey(currentDate);
+    }
+
+    function changeDate(offset) {
+      const newDate = new Date(currentDate);
+      newDate.setDate(newDate.getDate() + offset);
+      if (newDate >= startDate && newDate <= endDate) {
+        currentDate = newDate;
+        loadData();
+      }
+    }
+
+    function goToToday() {
+      currentDate = clampDate(new Date());
+      loadData();
+    }
+
+    function goToSelectedDate() {
+      const input = document.getElementById("goto-date").value;
+      if (input) {
+        currentDate = clampDate(new Date(input));
+        loadData();
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      onAuthStateChanged(auth, user => {
+        if (!user) window.location.href = "index.html";
+        else loadData();
+      });
+      document.getElementById("logout").addEventListener("click", () => {
+        signOut(auth);
+      });
+    });
+  </script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .logo { width: 200px; margin-bottom: 20px; }
+    .header .day-number { font-size: 36px; font-weight: bold; display: inline-block; margin-right: 20px; }
+    .header .weekday { font-size: 28px; font-weight: bold; display: inline-block; }
+    .header .month-year { font-size: 18px; margin-top: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border-bottom: 1px solid #000; padding: 6px; text-align: left; font-size: 14px; }
+    button, input[type="date"] { padding: 8px 16px; font-size: 14px; margin: 10px 5px 0 0; }
+    #show-field { width: 100%; padding: 8px; margin-top: 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <img src="image.png" alt="Logo Boteco" class="logo" />
+  <div class="header">
+    <div class="day-number" id="day-number">--</div>
+    <div class="weekday" id="weekday">---</div>
+    <div class="month-year" id="month-year">---</div>
+  </div>
+
+  <div><strong>Show:</strong></div>
+  <input type="text" id="show-field" placeholder="Enter show or artist name"/>
+
+  <table>
+    <thead>
+      <tr><th>Table</th><th>Name</th><th>PP</th><th>Time</th><th>Number</th></tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+
+  <div>
+    <button onclick="changeDate(-1)">Previous</button>
+    <button onclick="goToToday()">Today</button>
+    <button onclick="changeDate(1)">Next</button>
+    <input type="date" id="goto-date" onchange="goToSelectedDate()" />
+  </div>
+
+  <div>
+    <button onclick="saveData()">Save</button>
+    <button id="logout">Logout</button>
+  </div>
+</body>
+</html>
