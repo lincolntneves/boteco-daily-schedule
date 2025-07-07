@@ -33,18 +33,25 @@
       return date.toISOString().split('T')[0];
     }
 
+    function updateHeader() {
+      document.getElementById("day-number").textContent = currentDate.getDate();
+      document.getElementById("weekday").textContent = weekdays[currentDate.getDay()];
+      document.getElementById("month-year").textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      document.getElementById("goto-date").value = formatDateKey(currentDate);
+    }
+
     async function loadData() {
       const key = formatDateKey(currentDate);
       const ref = doc(db, 'schedule', key);
       const snap = await getDoc(ref);
-      let data = { show: '', rows: [] };
-      if (snap.exists()) {
-        data = snap.data();
-      }
+      const data = snap.exists() ? snap.data() : { show: "", rows: [] };
 
+      // preencher campo show
       document.getElementById("show-field").value = data.show || "";
+
       const tbody = document.getElementById("table-body");
       tbody.innerHTML = "";
+
       for (let i = 0; i < 15; i++) {
         const row = document.createElement("tr");
         for (let j = 0; j < 5; j++) {
@@ -94,13 +101,6 @@
       alert("Saved!");
     }
 
-    function updateHeader() {
-      document.getElementById("day-number").textContent = currentDate.getDate();
-      document.getElementById("weekday").textContent = weekdays[currentDate.getDay()];
-      document.getElementById("month-year").textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-      document.getElementById("goto-date").value = formatDateKey(currentDate);
-    }
-
     function changeDate(offset) {
       const newDate = new Date(currentDate);
       newDate.setDate(newDate.getDate() + offset);
@@ -123,11 +123,16 @@
       }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
+    // Espera DOM e autenticação
+    window.addEventListener("DOMContentLoaded", () => {
       onAuthStateChanged(auth, user => {
-        if (!user) window.location.href = "index.html";
-        else loadData();
+        if (!user) {
+          window.location.href = "index.html";
+        } else {
+          loadData();
+        }
       });
+
       document.getElementById("logout").addEventListener("click", () => {
         signOut(auth);
       });
