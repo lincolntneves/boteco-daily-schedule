@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Boteco Schedule Dashboard</title>
+  <title>Dashboard - Boteco Schedule</title>
   <script type="module">
     import { auth, db } from './firebase.js';
     import {
       onAuthStateChanged,
       signOut
-    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
       doc,
       setDoc,
       getDoc
-    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const startDate = new Date('2025-06-04');
     const endDate = new Date('2026-12-31');
@@ -46,9 +46,7 @@
       const snap = await getDoc(ref);
       const data = snap.exists() ? snap.data() : { show: "", rows: [] };
 
-      // preencher campo show
       document.getElementById("show-field").value = data.show || "";
-
       const tbody = document.getElementById("table-body");
       tbody.innerHTML = "";
 
@@ -123,7 +121,6 @@
       }
     }
 
-    // Espera DOM e autenticação
     window.addEventListener("DOMContentLoaded", () => {
       onAuthStateChanged(auth, user => {
         if (!user) {
