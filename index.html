@@ -6,7 +6,10 @@
   <title>Login - Boteco Schedule</title>
   <script type="module">
     import { auth } from './firebase.js';
-    import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      signInWithEmailAndPassword,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     onAuthStateChanged(auth, user => {
       if (user) window.location.href = "dashboard.html";
@@ -24,11 +27,34 @@
     }
   </script>
   <style>
-    body { font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #fff; }
-    .container { text-align: center; max-width: 300px; width: 100%; }
-    .logo { width: 200px; margin-bottom: 30px; }
-    input { width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; }
-    button { padding: 10px 20px; font-size: 16px; cursor: pointer; width: 100%; }
+    body {
+      font-family: Arial; display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0; background: #fff;
+    }
+    .container {
+      text-align: center;
+      max-width: 300px;
+      width: 100%;
+    }
+    .logo {
+      width: 200px;
+      margin-bottom: 30px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
